@@ -82,9 +82,9 @@ class Blockchain:
         longest_chain = None
         max_length = len(self.chain)
         for nodes in network : 
-            responce = requests.get('http://'+nodes+'/get_chain')
-            if responce.status_code == '200':
-                length = responce.json()['length']
+            response = requests.get('http://'+nodes+'/get_chain')
+            if response.status_code == '200':
+                length = response.json()['length']
                 chain = responce.json()['chain']
                 if length > max_length and self.is_chain_valid(chain) :
                     max_length = length 
@@ -156,8 +156,31 @@ def add_transaction():
     if not all (key in json for key in transaction_keys):
         return 'elements in the transaction are missing' ,400
     index = blockchain.add_transaction(json['sender'],json['reciever'],json['amount'])
-    responce = {'message': 'this transaction would be added to ' + index}
-    return jsonify(responce) , 201
+    response = {'message': 'this transaction would be added to ' + index}
+    return jsonify(response) , 201
+
+@app.route('/connect_node', methods= ['POST'])
+
+def connect_node():
+    json = responste.get_json()
+    nodes = json.get('nodes')
+    if nodes is None:
+        return 'no nodes' ,400
+    for node in nodes: 
+        blockchain.add_node(node)
+    response = {'message':'all the nodes are connected' + list(blockchain.nodes)}
+    
+    return jsonify(response) ,201
+
+@app.route('/replace_chain', methods = ['GET'])
+def replace_chain():
+    is_chain_replaced = blockchain.replace_chain()
+    if is_chain_replaced:
+        response = {'message': 'node replaced by longest chain',
+                    'new_chain' : blockchain.chain}
+    else:
+        response = {'message': 'all good'}
+    return jsonify(response), 200
 
 # Running the app
 app.run(host = '0.0.0.0', port = 5000)
